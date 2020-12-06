@@ -69,11 +69,11 @@ plt.setp(ax.get_xticklabels(), rotation=45)
 plt.legend()
 plt.show()
 
-#real sales per capita with seasonal Diff 
+#real sales per capita with detrending
 fig, ax = plt.subplots(figsize=(10, 5))
 plt.title('Retail Sales: Beer, Wine, and Liquor Stores, Not Seasonally Adjusted')
 x_axis = [np.datetime64(train_table.index.values[i]) for i in range(train_table.index.values.shape[0])]
-ax.plot(x_axis, train_table['real sales per capita sdiff'], label = 'Real Sales (1992 dollars) per capita with seasonal differencing (m = 12)')
+ax.plot(x_axis, train_table['real sales per capita det12'], label = 'Real Sales (1992 dollars) per capita detrended with SMA12')
 plt.setp(ax.get_xticklabels(), rotation=45)
 plt.legend()
 plt.show()
@@ -82,7 +82,7 @@ plt.show()
 fig, ax = plt.subplots(figsize=(10, 5))
 plt.title('Retail Sales: Beer, Wine, and Liquor Stores, Not Seasonally Adjusted')
 x_axis = [np.datetime64(train_table.index.values[i]) for i in range(train_table.index.values.shape[0])]
-ax.plot(x_axis, train_table['real sales per capita sdiff det12'], label = '')
+ax.plot(x_axis, train_table['real sales per capita sdiff det12'], label = 'Real Sales (1992 dollars) per capita detrended with SMA12 and seasonal differencing')
 plt.setp(ax.get_xticklabels(), rotation=45)
 plt.legend()
 plt.show()
@@ -101,7 +101,7 @@ plt.show()
 print(train_table['real sales per capita sdiff det12'].describe(include = 'all'))
 print()
 
-ADF on real sales per capita
+#ADF on real sales per capita
 print('ADF on real sales per capita')
 result = adfuller(train_table['real sales per capita'].dropna())
 print('ADF Statistic: %f' % result[0])
@@ -110,7 +110,7 @@ print('Critical Values:')
 for key, value in result[4].items():
 	print('\t%s: %.3f' % (key, value))
 
-ADF on real sales per capita after detrending
+#ADF on real sales per capita after detrending
 print('ADF on time series after detrending')
 result = adfuller(train_table['real sales per capita det12'].dropna())
 print('ADF Statistic: %f' % result[0])
@@ -272,8 +272,16 @@ final_model = ARIMA(endog = train_table['real sales per capita sdiff det12'].dro
               missing = 'drop')
 final_model_fit = final_model.fit()
 print(final_model_fit.summary())
+print('AR roots')
+ar_roots = final_model_fit.arroots
+print(ar_roots)
+print('MA roots')
+ma_roots = final_model_fit.maroots
+print(ma_roots)
+
 final_model_fit.plot_diagnostics(lags = 20)
 plt.show()
+
 #get AC, PAC, Q-stat and P-value data
 acf_df = pd.DataFrame(sm.graphics.tsa.acf(final_model_fit.resid, qstat=True, alpha=None, fft = True, nlags = 20)).T
 acf_df = acf_df.reset_index()
@@ -299,15 +307,7 @@ final_model = ARIMA(endog = train_table['real sales per capita sdiff det12'].dro
 
 final_model_fit = final_model.fit()
 forecast = final_model_fit.predict(start = 297, end = 321, dynamic = True)
-final_model_fit.plot_diagnostics(lags = 20)
-plt.show()
 
-print('AR roots')
-ar_roots = final_model_fit.arroots
-print(ar_roots)
-print('MA roots')
-ma_roots = final_model_fit.maroots
-print(ma_roots)
 
 fig, ax = plt.subplots()
 x_axis = [np.datetime64(test_table.index.values[i]) for i in range(test_table.index.values.shape[0])]
@@ -316,4 +316,3 @@ ax.plot(x_axis, forecast[1:], label = 'forecast')
 plt.setp(ax.get_xticklabels(), rotation=45)
 plt.legend()
 plt.show()
-
